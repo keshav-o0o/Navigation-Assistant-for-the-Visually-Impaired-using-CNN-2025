@@ -1,7 +1,8 @@
 from ultralytics import YOLO
 import streamlit as st
 import cv2
-import pafy
+from playsound import playsound
+
 
 import settings
 
@@ -61,85 +62,21 @@ def _display_detected_frames(conf, model, st_frame, image, is_display_tracking=N
                    channels="BGR",
                    use_column_width=True
                    )
+    if(len(res[0].boxes.xyxy) != 0):
+        val = res[0].boxes.xyxy[0][0] 
+        val1 = res[0].boxes.xyxy[0][2]
+        per_width = val1-val
+        distance = (image_width * focal_length) / per_width
+        if distance < 16:
+            playsound('alert.mp3',False)
+        print(distance)
 
 
-def play_youtube_video(conf, model):
-    """
-    Plays a webcam stream. Detects Objects in real-time using the YOLOv8 object detection model.
+focal_length = 40
+image_width = 70
 
-    Parameters:
-        conf: Confidence of YOLOv8 model.
-        model: An instance of the `YOLOv8` class containing the YOLOv8 model.
-
-    Returns:
-        None
-
-    Raises:
-        None
-    """
-    source_youtube = st.sidebar.text_input("YouTube Video url")
-
-    is_display_tracker, tracker = display_tracker_options()
-
-    if st.sidebar.button('Detect Objects'):
-        try:
-            video = pafy.new(source_youtube)
-            best = video.getbest(preftype="mp4")
-            vid_cap = cv2.VideoCapture(best.url)
-            st_frame = st.empty()
-            while (vid_cap.isOpened()):
-                success, image = vid_cap.read()
-                if success:
-                    _display_detected_frames(conf,
-                                             model,
-                                             st_frame,
-                                             image,
-                                             is_display_tracker,
-                                             tracker
-                                             )
-                else:
-                    vid_cap.release()
-                    break
-        except Exception as e:
-            st.sidebar.error("Error loading video: " + str(e))
-
-
-def play_rtsp_stream(conf, model):
-    """
-    Plays an rtsp stream. Detects Objects in real-time using the YOLOv8 object detection model.
-
-    Parameters:
-        conf: Confidence of YOLOv8 model.
-        model: An instance of the `YOLOv8` class containing the YOLOv8 model.
-
-    Returns:
-        None
-
-    Raises:
-        None
-    """
-    source_rtsp = st.sidebar.text_input("rtsp stream url")
-    is_display_tracker, tracker = display_tracker_options()
-    if st.sidebar.button('Detect Objects'):
-        try:
-            vid_cap = cv2.VideoCapture(source_rtsp)
-            st_frame = st.empty()
-            while (vid_cap.isOpened()):
-                success, image = vid_cap.read()
-                if success:
-                    _display_detected_frames(conf,
-                                             model,
-                                             st_frame,
-                                             image,
-                                             is_display_tracker,
-                                             tracker
-                                             )
-                else:
-                    vid_cap.release()
-                    break
-        except Exception as e:
-            st.sidebar.error("Error loading RTSP stream: " + str(e))
-
+# def find_distance(focal_lenth,known_width):
+#     return (known_width * focal_length) / per_width
 
 def play_webcam(conf, model):
     """
